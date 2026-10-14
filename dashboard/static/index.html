@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1019">
+  <title>Avionics · Flight telemetry</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✈</span><div><div class="eyebrow">ESP32 / X-PLANE 12</div><h1>Flight telemetry<span class="title-dot">.</span></h1></div></div>
+      <div class="header-end"><span class="local-tag">LOCAL INSTRUMENT PANEL</span><button class="icon-button" id="settings-toggle" aria-expanded="false" aria-controls="settings-panel">Connection <span aria-hidden="true">↗</span></button></div>
+    </header>
+
+    <section class="settings-panel" id="settings-panel" hidden aria-label="Device connection">
+      <div><h2>Connect your ESP32</h2><p>Enter its local hostname or Wi-Fi IP address. The panel reads telemetry from the board through this computer.</p></div>
+      <form id="device-form"><label for="device-host">Device hostname or IP</label><div class="input-row"><input id="device-host" name="device_host" placeholder="esp32-avionics.local" autocomplete="off" spellcheck="false" required maxlength="253"><button class="button primary" id="save-host" type="submit">Connect</button></div><p class="form-feedback" id="config-feedback" role="status"></p></form>
+    </section>
+
+    <div class="connection-strip" aria-label="Connection status">
+      <div class="status-chip" id="device-chip"><span class="status-dot"></span><span>ESP32</span><strong id="device-status">Connecting</strong></div>
+      <span class="connection-line" aria-hidden="true"></span>
+      <div class="status-chip" id="sim-chip"><span class="status-dot"></span><span>X-Plane</span><strong id="sim-status">Waiting</strong></div>
+      <span class="connection-line" aria-hidden="true"></span>
+      <div class="status-chip" id="data-chip"><span class="status-dot"></span><span>Telemetry</span><strong id="data-status">Waiting</strong></div>
+      <div class="connection-meta"><span id="device-address">esp32-avionics.local</span><span id="signal-strength">Wi-Fi —</span></div>
+    </div>
+
+    <div class="notice" id="notice" role="status"><span class="notice-icon" aria-hidden="true">i</span><div><strong id="notice-title">Waiting for your aircraft</strong><p id="notice-text">Keep the ESP32 connected by USB, load an aircraft in X-Plane, and let the board join Wi-Fi.</p></div></div>
+
+    <section class="instrument-section" aria-labelledby="instruments-heading">
+      <div class="section-heading"><h2 id="instruments-heading">Aircraft instruments</h2><span id="instrument-state">AWAITING TELEMETRY</span></div>
+      <div class="instrument-grid stale" id="instruments">
+        <article class="instrument"><div class="instrument-label"><h3>Indicated airspeed</h3><span class="instrument-abbr">IAS</span></div><div class="readout"><span id="airspeed-value">—</span><small>kt</small></div><div class="instrument-footer"><span>AIR RELATIVE</span><span class="mini-rule" aria-hidden="true"></span></div></article>
+        <article class="instrument"><div class="instrument-label"><h3>Indicated altitude</h3><span class="instrument-abbr">ALT</span></div><div class="readout"><span id="altitude-value">—</span><small>ft</small></div><div class="instrument-footer"><span>BAROMETRIC</span><span class="mini-rule" aria-hidden="true"></span></div></article>
+        <article class="instrument heading-instrument"><div class="instrument-label"><h3>Magnetic heading</h3><span class="instrument-abbr">HDG</span></div><div class="readout"><span id="heading-value">—</span><small>°</small></div><div class="instrument-footer"><span id="heading-direction">—</span><span class="heading-track" aria-hidden="true"><span>N</span><span>E</span><span>S</span><span>W</span></span></div></article>
+        <article class="instrument attitude-instrument"><div class="instrument-label"><h3>Attitude</h3><span class="instrument-abbr">ATT</span></div><div class="attitude-body"><canvas id="attitude-canvas" aria-label="Artificial horizon; numeric pitch and roll shown alongside" role="img"></canvas><div class="attitude-numbers"><div><span>PITCH</span><strong id="pitch-value">—</strong></div><div><span>ROLL</span><strong id="roll-value">—</strong></div></div></div></article>
+        <article class="instrument"><div class="instrument-label"><h3>Vertical speed</h3><span class="instrument-abbr">V/S</span></div><div class="readout"><span id="vertical-speed-value">—</span><small>ft/min</small></div><div class="instrument-footer"><span id="vertical-direction">—</span><span class="vsi-symbol" id="vsi-symbol" aria-hidden="true">↕</span></div></article>
+        <article class="instrument"><div class="instrument-label"><h3>Simulator time</h3><span class="instrument-abbr">TIME</span></div><div class="readout time-readout"><span id="flight-time-value">—</span></div><div class="instrument-footer"><span>RUNNING TIME</span><span id="sim-run-state">—</span></div></article>
+      </div>
+    </section>
+
+    <section class="graph-panel" aria-labelledby="graph-heading">
+      <div class="graph-heading"><div><div class="eyebrow">FLIGHT ENVELOPE TRACE</div><h2 id="graph-heading">Altitude vs. airspeed</h2><p>Follow your aircraft's path through speed and altitude.</p></div><div class="graph-controls"><span class="recording-status" id="recording-status"><span class="status-dot"></span>Waiting</span><button class="button" id="pause-trace" type="button" aria-pressed="false">Pause trace</button><button class="button subtle" id="clear-trace" type="button">Clear</button></div></div>
+      <div class="graph-frame" id="graph-frame"><canvas id="trace-canvas" role="img" aria-label="Altitude in feet plotted against indicated airspeed in knots, using received flight telemetry from the last two minutes."></canvas><div class="graph-empty" id="graph-empty"><span class="empty-crosshair" aria-hidden="true">⌖</span><strong>Your flight starts here</strong><p>Live flight data will draw the trace.<br>No sample data is displayed.</p></div><div class="graph-tooltip" id="graph-tooltip" hidden></div></div>
+      <div class="graph-footer"><div class="trace-key"><span class="trace-line" aria-hidden="true"></span><span>Received flight path</span><span class="trace-point" aria-hidden="true"></span><span>Latest sample</span></div><div class="trace-meta"><span id="sample-count">0 samples</span><span>LAST 2 MIN</span><span>UP TO 5 Hz</span></div></div>
+    </section>
+    <footer class="page-footer"><span>AVIONICS TELEMETRY <span class="footer-slash">/</span> ESP32-S3</span><span id="last-update">No flight data received</span><span>Simulator use</span></footer>
+  </main>
+</body>
+</html>
